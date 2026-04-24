@@ -9,19 +9,20 @@ This document is the complete reference for every command, flag, configuration o
 1. [Installation](#installation)
 2. [Initialization](#initialization)
 3. [Commit interview](#commit-interview)
-4. [Real-time file watcher](#real-time-file-watcher)
-5. [Viewing your log](#viewing-your-log)
-6. [Recording decisions](#recording-decisions)
-7. [Revert post-mortems](#revert-post-mortems)
-8. [End-of-day reflection](#end-of-day-reflection)
-9. [Statistics and analytics](#statistics-and-analytics)
-10. [Exporting data](#exporting-data)
-11. [Configuration reference](#configuration-reference)
-12. [Database reference](#database-reference)
-13. [Git hooks reference](#git-hooks-reference)
-14. [Answer tagging](#answer-tagging)
-15. [How complexity is scored](#how-complexity-is-scored)
-16. [Windows notes](#windows-notes)
+4. [Pausing and disabling](#pausing-and-disabling)
+5. [Real-time file watcher](#real-time-file-watcher)
+6. [Viewing your log](#viewing-your-log)
+7. [Recording decisions](#recording-decisions)
+8. [Revert post-mortems](#revert-post-mortems)
+9. [End-of-day reflection](#end-of-day-reflection)
+10. [Statistics and analytics](#statistics-and-analytics)
+11. [Exporting data](#exporting-data)
+12. [Configuration reference](#configuration-reference)
+13. [Database reference](#database-reference)
+14. [Git hooks reference](#git-hooks-reference)
+15. [Answer tagging](#answer-tagging)
+16. [How complexity is scored](#how-complexity-is-scored)
+17. [Windows notes](#windows-notes)
 
 ---
 
@@ -84,7 +85,7 @@ grit init
 | Path | Description |
 |------|-------------|
 | `.grit.yaml` | Project-level config (question pool, thresholds, watch settings) |
-| `~/.grit/store.db` | Global SQLite database shared across all your projects |
+| `.grit/store.db` | Per-repository SQLite database |
 | `.git/hooks/pre-commit` | Runs `grit commit` before every commit |
 | `.git/hooks/post-rewrite` | Detects revert commits and triggers post-mortems |
 
@@ -101,7 +102,7 @@ The commit interview runs automatically every time you `git commit`. You never n
 1. grít reads the staged diff to understand the nature of the change.
 2. It selects 2 questions from the configured pool, avoiding questions asked in the last N commits (the "window").
 3. Each question is displayed as an interactive prompt with a 30-second timeout.
-4. Answers are stored in `~/.grit/store.db` and optionally tagged.
+4. Answers are stored in `.grit/store.db` and optionally tagged.
 
 ### Context-aware questions
 
@@ -134,6 +135,49 @@ If there is no TTY available (CI, piped commands, SSH without terminal allocatio
 ### Exit code guarantee
 
 `grit commit` **always exits 0**. A commit is never blocked by grít, even if grít itself panics.
+
+---
+
+## Pausing and disabling
+
+Sometimes you need to push rapidly without interruption. grít provides three commands to pause the friction interview without uninstalling hooks.
+
+### `grit snooze [duration]`
+
+Pauses interviews for a fixed duration. Duration uses Go's duration syntax (`h`, `m`, `s`). Defaults to 1 hour when no argument is given.
+
+```sh
+grit snooze          # pause for 1 hour
+grit snooze 30m      # pause for 30 minutes
+grit snooze 2h       # pause for 2 hours
+grit snooze 1h30m    # pause for 1.5 hours
+```
+
+### `grit disable`
+
+Pauses interviews indefinitely, until you explicitly resume.
+
+```sh
+grit disable
+```
+
+### `grit resume`
+
+Re-enables interviews, cancelling any active snooze or disable.
+
+```sh
+grit resume
+```
+
+### How pausing works
+
+Pause state is stored in `.grit/pause`:
+
+- **Snoozed** — the file contains an RFC 3339 timestamp; the pause clears automatically when that time passes.
+- **Disabled** — the file contains the string `disabled`; the pause persists until `grit resume`.
+- **Active** — the file is absent or the snooze timestamp has elapsed.
+
+While paused, `grit commit` records a skipped event and exits 0 immediately. No questions appear and no commits are delayed.
 
 ---
 
@@ -363,7 +407,7 @@ Shows your daily stats and asks 2 questions from the reflection pool:
 If `deep_reflect.enabled: true` in `.grit.yaml`, answers are also written to a dated markdown file:
 
 ```
-~/.grit/reflections/
+.grit/reflections/
 ├── 2025-06-01.md
 ├── 2025-06-02.md
 └── ...
@@ -440,7 +484,7 @@ grit push --json
 grit push --md --since 2025-01-01
 ```
 
-Output is written to `~/.grit/exports/grit-friction-{period}.{format}`.
+Output is written to `.grit/exports/grit-friction-{period}.{format}`.
 
 **Markdown export:** organizes events by day with formatted question/answer pairs.
 
@@ -515,20 +559,20 @@ watch:
 
 export:
   # Directory where `grit push` writes export files.
-  path: "~/.grit/exports"
+  path: ".grit/exports"
 
 deep_reflect:
   # If true, `grit reflect` writes answers to a dated markdown file.
   enabled: false
   # Directory for dated reflection markdown files.
-  output_dir: "~/.grit/reflections"
+  output_dir: ".grit/reflections"
 ```
 
 ---
 
 ## Database reference
 
-The SQLite database lives at `~/.grit/store.db` and is shared across all projects. It is opened in WAL mode with a 5-second busy timeout so `grit watch` and `grit commit` can write simultaneously without contention.
+The SQLite database lives at `.grit/store.db` inside each repository. It is opened in WAL mode with a 5-second busy timeout so `grit watch` and `grit commit` can write simultaneously without contention.
 
 ### `events` table
 
@@ -571,7 +615,7 @@ CREATE TABLE complexity_history (
 ### Querying the database directly
 
 ```sh
-sqlite3 ~/.grit/store.db
+sqlite3 .grit/store.db
 
 # all events from the last 7 days
 SELECT hook, occurred_at, commit_msg

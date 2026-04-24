@@ -25,7 +25,7 @@ A developer friction logger. grít hooks into your git workflow and file editor 
 - `grit stats` — weekly analytics, file complexity trends, heatmaps, and tagged digests
 - `grit push` — export your friction data to Markdown or JSON
 
-All answers are stored locally in a SQLite database at `~/.grit/store.db`.
+All answers are stored locally in a SQLite database at `.grit/store.db` inside each project.
 
 ---
 
@@ -108,7 +108,7 @@ grit init
 
 Creates:
 - `.grit.yaml` — project-level configuration with question pool, thresholds, and watch settings
-- `~/.grit/store.db` — local SQLite database (WAL mode, persists across all projects)
+- `.grit/store.db` — per-repository SQLite database (WAL mode)
 - `.git/hooks/pre-commit` — calls `grit commit` before every commit
 - `.git/hooks/post-rewrite` — detects revert commits and triggers post-mortems
 
@@ -135,6 +135,22 @@ grit commit
 ```
 [debug] spent 45 minutes on a nil pointer that a type check would have caught
 ```
+
+---
+
+### `grit snooze` / `grit disable` / `grit resume`
+
+Temporarily or permanently pause friction interviews — useful when you need to push rapidly without interruption.
+
+```sh
+grit snooze          # pause for 1 hour (default)
+grit snooze 30m      # pause for 30 minutes
+grit snooze 2h30m    # pause for 2.5 hours
+grit disable         # pause indefinitely
+grit resume          # re-enable interviews
+```
+
+While paused, `grit commit` records a skipped event and exits immediately — commits are never blocked. Pause state is stored in `.grit/pause` and expires automatically when a snooze duration elapses.
 
 ---
 
@@ -244,7 +260,7 @@ grit reflect
 Displays:
 - Total events logged today, completed vs. skipped interviews
 - 2 reflection questions from a rotating pool
-- Optionally writes answers to `~/.grit/reflections/YYYY-MM-DD.md` (if `deep_reflect.enabled: true`)
+- Optionally writes answers to `.grit/reflections/YYYY-MM-DD.md` (if `deep_reflect.enabled: true`)
 
 ---
 
@@ -302,7 +318,7 @@ grit push --md --since 2025-01-01
 | `--json` | Export to JSON |
 | `--since <date>` | Export from this date onward (default: last month) |
 
-Output is written to `~/.grit/exports/grit-friction-{period}.{format}`.
+Output is written to `.grit/exports/grit-friction-{period}.{format}`.
 
 ---
 
@@ -344,11 +360,11 @@ watch:
     python: ["data", "stuff", "res", "val"]
 
 export:
-  path: "~/.grit/exports"
+  path: ".grit/exports"
 
 deep_reflect:
   enabled: false
-  output_dir: "~/.grit/reflections"
+  output_dir: ".grit/reflections"
 ```
 
 ---
@@ -395,7 +411,7 @@ grit/
 
 ## Database schema
 
-`~/.grit/store.db` — WAL mode, 5-second busy timeout (watch and commit can write simultaneously).
+`.grit/store.db` — WAL mode, 5-second busy timeout (watch and commit can write simultaneously).
 
 ```sql
 CREATE TABLE events (
