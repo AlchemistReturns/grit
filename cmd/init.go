@@ -57,12 +57,12 @@ watch:
     python: ["data", "stuff", "res", "val"]
 
 export:
-  path: "~/.grit/exports"
+  path: ".grit/exports"
   auto_export: false
 
 deep_reflect:
   enabled: true
-  output_dir: "~/.grit/reflections"
+  output_dir: ".grit/reflections"
 `
 
 func runInit(cmd *cobra.Command, args []string) error {
