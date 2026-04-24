@@ -183,26 +183,26 @@ func runStatsHeatmap(cmd *cobra.Command, args []string) error {
 		for w := 0; w < weeks; w++ {
 			day := weekStart.AddDate(0, 0, -(weeks-1-w)*7+dow)
 			if day.After(now) {
-				fmt.Print(" ")
+				fmt.Print("  ")
 				continue
 			}
 			key := day.Format("2006-01-02")
-			fmt.Print(densityChar(eventsPerDay[key]))
+			fmt.Printf("%s ", densityChar(eventsPerDay[key]))
 		}
 		fmt.Println()
 	}
 
-	// Month labels
+	// Month labels (2 chars per column to match spaced cells)
 	fmt.Print("       ")
 	lastMonth := ""
 	for w := 0; w < weeks; w++ {
 		day := weekStart.AddDate(0, 0, -(weeks-1-w)*7)
 		month := day.Format("Jan")
 		if month != lastMonth && day.Day() <= 7 {
-			fmt.Printf("%-4s", month)
+			fmt.Printf("%-2s", month)
 			lastMonth = month
 		} else {
-			fmt.Print("    ")
+			fmt.Print("  ")
 		}
 	}
 	fmt.Println()
