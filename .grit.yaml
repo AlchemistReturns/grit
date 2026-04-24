@@ -1,0 +1,43 @@
+# grít configuration
+
+questions:
+  pool:
+    - "What's the hardest part of this change?"
+    - "What would you do differently next time?"
+    - "What assumption are you making that could be wrong?"
+    - "Did you have to look anything up? What was the gap?"
+    - "Is this change reversible? If not, why not?"
+    - "Who else needs to know about this change?"
+    - "What did you cut from the original plan, and was that the right call?"
+    - "What could break that you haven't tested?"
+    - "What's the simplest thing you could have done here?"
+    - "What would you tell a new engineer about this code tomorrow?"
+    - "What slowed you down the most on this change?"
+    - "What's the riskiest part of this commit?"
+  window: 5
+
+thresholds:
+  complexity: 10.0
+  ai_reflect_lines: 15
+  dead_time_minutes: 40
+  undo_spike_lines: 20
+  paste_lines: 30
+
+watch:
+  extensions:
+    - .go
+    - .js
+    - .ts
+    - .py
+    - .rs
+  language_names:
+    go: [ "result", "tmp", "data", "obj" ]
+    python: [ "data", "stuff", "res", "val" ]
+
+export:
+  path: "~/.grit/exports"
+  auto_export: false
+
+deep_reflect:
+  enabled: true
+  output_dir: "~/.grit/reflections"
