@@ -61,6 +61,11 @@ func runCommit(cmd *cobra.Command, args []string) {
 		return
 	}
 
+	if config.IsPaused() {
+		store.InsertEvent(db, "interview", true, commitMsg)
+		return
+	}
+
 	if shouldSkip(commitMsg) {
 		store.InsertEvent(db, "interview", true, commitMsg)
 		return
