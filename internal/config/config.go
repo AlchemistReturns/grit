@@ -80,18 +80,18 @@ var defaults = Config{
 		Extensions: []string{".go", ".js", ".ts", ".py", ".rs", ".java", ".c", ".cpp"},
 	},
 	Export: ExportConfig{
-		Path:       "~/.grit/exports",
+		Path:       ".grit/exports",
 		AutoExport: false,
 	},
 	DeepReflect: DeepReflectConfig{
 		Enabled:   true,
-		OutputDir: "~/.grit/reflections",
+		OutputDir: ".grit/reflections",
 	},
 }
 
 func GritDir() string {
-	home, _ := os.UserHomeDir()
-	return filepath.Join(home, ".grit")
+	cwd, _ := os.Getwd()
+	return filepath.Join(cwd, ".grit")
 }
 
 func DBPath() string {
