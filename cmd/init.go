@@ -105,6 +105,11 @@ func runInit(cmd *cobra.Command, args []string) error {
 	}
 	fmt.Println("  created  .git/hooks/post-rewrite")
 
+	if err := hooks.InstallPostCommit(cwd); err != nil {
+		return fmt.Errorf("installing post-commit hook: %w", err)
+	}
+	fmt.Println("  created  .git/hooks/post-commit")
+
 	fmt.Println("\ngrít initialized. Start committing to capture friction.")
 	return nil
 }

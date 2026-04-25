@@ -15,6 +15,7 @@ var (
 	logHook    string
 	logSince   string
 	logSkipped bool
+	logCommit  string
 )
 
 var logCmd = &cobra.Command{
@@ -27,6 +28,7 @@ func init() {
 	logCmd.Flags().StringVar(&logHook, "hook", "", "filter by hook type (interview, file_complexity, naming, ai_reflect, decision, revert)")
 	logCmd.Flags().StringVar(&logSince, "since", "", "show events since date (e.g. 2006-01-02)")
 	logCmd.Flags().BoolVar(&logSkipped, "skipped", false, "show only skipped events")
+	logCmd.Flags().StringVar(&logCommit, "commit", "", "filter by commit hash")
 	rootCmd.AddCommand(logCmd)
 }
 
@@ -64,6 +66,9 @@ func runLog(cmd *cobra.Command, args []string) error {
 	if logSkipped {
 		b := true
 		f.Skipped = &b
+	}
+	if logCommit != "" {
+		f.CommitHash = logCommit
 	}
 
 	events, err := store.QueryEvents(db, f)
@@ -113,6 +118,14 @@ func runLog(cmd *cobra.Command, args []string) error {
 			commitPart,
 			skipLabel,
 		)
+
+		if ev.CommitHash != "" {
+			hash := ev.CommitHash
+			if len(hash) > 7 {
+				hash = hash[:7]
+			}
+			fmt.Printf("  %s commit %s\n", barStyle.Render("  ┆"), metaStyle.Render(hash))
+		}
 
 		if ev.RelatedCommit != "" {
 			fmt.Printf("  %s reverts %s\n", barStyle.Render("  ┆"), metaStyle.Render(ev.RelatedCommit))
