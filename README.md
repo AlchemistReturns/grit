@@ -1,6 +1,6 @@
 # grít
 
-Grít is a CLI tool that turns your commits into a knowledge base. By introducing small, purposeful friction at the moments that matter — a commit, a dependency, a revert — it captures the thinking behind your code, not just the code itself.
+Grít is a CLI tool that turns your commits into a knowledge base. By introducing small, purposeful friction at the moments that matter - a commit, a dependency, a revert - it captures the thinking behind your code, not just the code itself.
 
 ---
 
