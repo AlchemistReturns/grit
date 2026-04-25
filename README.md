@@ -32,6 +32,8 @@
   </p>
 
   <p>
+    <a href="#website">Website</a>
+    &nbsp;·&nbsp;
     <a href="#what-it-does">What it does</a>
     &nbsp;·&nbsp;
     <a href="#prerequisites">Prerequisites</a>
@@ -48,6 +50,19 @@
   </p>
 
 </div>
+
+---
+
+## Website
+
+A companion project runs the **official site** in the browser describing the story, how it works, feature tour, and install CTAs, and full documentation.
+
+|                 |                                                                                                                                                 |
+| :-------------- | :---------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Live**        | [**grit-cli.vercel.app**](https://grit-cli.vercel.app/) — home page, and [**/docs**](https://grit-cli.vercel.app/docs) - complete documentation |
+| **Source Code** | [**github.com/rawadhossain/grit-cli**](https://github.com/rawadhossain/grit-cli)                                                                |
+
+Use the site for **discovery and the full /docs experience**; use this README for **install, commands, and reference** in your editor and at the terminal.
 
 ---
 
