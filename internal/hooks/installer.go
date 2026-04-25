@@ -41,6 +41,23 @@ func InstallPostRewrite(repoRoot string) error {
 	)
 }
 
+const postCommitContent = `#!/bin/sh
+if command -v grit >/dev/null 2>&1; then
+    grit post-commit
+fi
+`
+
+const postCommitMarker = "grit post-commit"
+
+// InstallPostCommit writes or appends the post-commit hook.
+func InstallPostCommit(repoRoot string) error {
+	return installHook(
+		filepath.Join(repoRoot, ".git", "hooks", "post-commit"),
+		postCommitContent,
+		postCommitMarker,
+	)
+}
+
 func installHook(hookPath, content, marker string) error {
 	existing, err := os.ReadFile(hookPath)
 	if err == nil {

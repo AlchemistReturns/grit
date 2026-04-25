@@ -14,12 +14,14 @@ type Event struct {
 	Skipped       bool
 	CommitMsg     string
 	RelatedCommit string
+	CommitHash    string
 }
 
 type Filter struct {
-	Hook    string
-	Since   time.Time
-	Skipped *bool
+	Hook       string
+	Since      time.Time
+	Skipped    *bool
+	CommitHash string
 }
 
 func newID() string {
@@ -35,14 +37,14 @@ func InsertEvent(db *sql.DB, hook string, skipped bool, commitMsg string) (strin
 func InsertEventFull(db *sql.DB, hook string, skipped bool, commitMsg, relatedCommit string) (string, error) {
 	id := newID()
 	_, err := db.Exec(
-		`INSERT INTO events (id, hook, occurred_at, skipped, commit_msg, related_commit) VALUES (?, ?, ?, ?, ?, ?)`,
+		`INSERT INTO events (id, hook, occurred_at, skipped, commit_msg, related_commit, commit_hash) VALUES (?, ?, ?, ?, ?, ?, '')`,
 		id, hook, time.Now().Unix(), btoi(skipped), commitMsg, relatedCommit,
 	)
 	return id, err
 }
 
 func QueryEvents(db *sql.DB, f Filter) ([]Event, error) {
-	query := `SELECT id, hook, occurred_at, skipped, commit_msg, COALESCE(related_commit, '') FROM events WHERE 1=1`
+	query := `SELECT id, hook, occurred_at, skipped, commit_msg, COALESCE(related_commit, ''), COALESCE(commit_hash, '') FROM events WHERE 1=1`
 	args := []any{}
 
 	if f.Hook != "" {
@@ -56,6 +58,10 @@ func QueryEvents(db *sql.DB, f Filter) ([]Event, error) {
 	if f.Skipped != nil {
 		query += ` AND skipped = ?`
 		args = append(args, btoi(*f.Skipped))
+	}
+	if f.CommitHash != "" {
+		query += ` AND commit_hash LIKE ?`
+		args = append(args, f.CommitHash+"%")
 	}
 	query += ` ORDER BY occurred_at DESC`
 
@@ -71,7 +77,7 @@ func QueryEvents(db *sql.DB, f Filter) ([]Event, error) {
 		var ts int64
 		var skip int
 		var msg sql.NullString
-		if err := rows.Scan(&e.ID, &e.Hook, &ts, &skip, &msg, &e.RelatedCommit); err != nil {
+		if err := rows.Scan(&e.ID, &e.Hook, &ts, &skip, &msg, &e.RelatedCommit, &e.CommitHash); err != nil {
 			return nil, err
 		}
 		e.OccurredAt = time.Unix(ts, 0)
@@ -82,6 +88,16 @@ func QueryEvents(db *sql.DB, f Filter) ([]Event, error) {
 		events = append(events, e)
 	}
 	return events, rows.Err()
+}
+
+func UpdateLatestEventCommitHash(db *sql.DB, hook string, commitHash string) error {
+	_, err := db.Exec(
+		`UPDATE events SET commit_hash = ? WHERE id = (
+			SELECT id FROM events WHERE hook = ? AND (commit_hash IS NULL OR commit_hash = '') ORDER BY occurred_at DESC LIMIT 1
+		)`,
+		commitHash, hook,
+	)
+	return err
 }
 
 // CountEvents returns total and skipped event counts since the given unix timestamp.

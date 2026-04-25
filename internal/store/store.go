@@ -34,7 +34,8 @@ func migrate(db *sql.DB) error {
 			occurred_at     INTEGER NOT NULL,
 			skipped         INTEGER NOT NULL DEFAULT 0,
 			commit_msg      TEXT,
-			related_commit  TEXT
+			related_commit  TEXT,
+			commit_hash     TEXT
 		);
 
 		CREATE TABLE IF NOT EXISTS answers (
@@ -62,5 +63,6 @@ func migrate(db *sql.DB) error {
 	// Add new columns to existing databases; errors mean column already exists — safe to ignore.
 	db.Exec(`ALTER TABLE answers ADD COLUMN tag TEXT NOT NULL DEFAULT ''`)
 	db.Exec(`ALTER TABLE events ADD COLUMN related_commit TEXT`)
+	db.Exec(`ALTER TABLE events ADD COLUMN commit_hash TEXT`)
 	return nil
 }
