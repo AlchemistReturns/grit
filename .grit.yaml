@@ -31,13 +31,13 @@ watch:
     - .py
     - .rs
   language_names:
-    go: [ "result", "tmp", "data", "obj" ]
-    python: [ "data", "stuff", "res", "val" ]
+    go: ["result", "tmp", "data", "obj"]
+    python: ["data", "stuff", "res", "val"]
 
 export:
-  path: "~/.grit/exports"
+  path: ".grit/exports"
   auto_export: false
 
 deep_reflect:
   enabled: true
-  output_dir: "~/.grit/reflections"
+  output_dir: ".grit/reflections"
