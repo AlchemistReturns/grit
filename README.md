@@ -111,6 +111,7 @@ Creates:
 - `.grit/store.db` — per-repository SQLite database (WAL mode)
 - `.git/hooks/pre-commit` — calls `grit commit` before every commit
 - `.git/hooks/post-rewrite` — detects revert commits and triggers post-mortems
+- `.git/hooks/post-commit` — records the commit hash against the interview event
 
 Safe to re-run. Existing hooks are appended to, not overwritten. Existing `.grit.yaml` is not touched.
 
@@ -177,6 +178,9 @@ grit log --since 2025-01-15
 
 # show only skipped events
 grit log --skipped
+
+# look up the interview linked to a specific commit
+grit log --commit abc1234
 ```
 
 | Flag | Description |
@@ -184,6 +188,7 @@ grit log --skipped
 | `--hook <type>` | Filter by event type (see list above) |
 | `--since <date>` | Show events on or after this date (`YYYY-MM-DD`) |
 | `--skipped` | Show only events where the prompt was skipped or timed out |
+| `--commit <hash>` | Show the interview linked to a specific commit hash (prefix match) |
 
 ---
 
@@ -322,6 +327,26 @@ Output is written to `.grit/exports/grit-friction-{period}.{format}`.
 
 ---
 
+### `grit remove`
+
+Removes grít hooks and configuration from the current repository.
+
+```sh
+grit remove          # remove hooks and .grit.yaml
+grit remove --all    # also delete the entire .grit folder (database included)
+```
+
+| Flag | Description |
+|------|-------------|
+| `--all` | Completely remove the `.grit` directory, including the SQLite database |
+
+- Cleanly unregisters grít from all three hooks (`pre-commit`, `post-rewrite`, `post-commit`) without touching any other hook logic you may have
+- Removes `.grit.yaml`
+- Without `--all`, the `.grit/` folder (database, exports, reflections) is preserved
+- Safe to run even if hooks were never installed
+
+---
+
 ## Configuration
 
 grít looks for `.grit.yaml` in the current directory. All fields are optional.
@@ -381,13 +406,14 @@ grit/
 │   ├── root.go           cobra root, Execute()
 │   ├── init.go           grit init
 │   ├── commit.go         grit commit — always exits 0
-│   ├── log.go            grit log + filters
+│   ├── log.go            grit log + filters (incl. --commit hash lookup)
 │   ├── watch.go          grit watch — debounce, channel event loop
 │   ├── decision.go       grit decision / list / export
 │   ├── revert.go         grit revert --check
 │   ├── reflect.go        grit reflect
 │   ├── stats.go          grit stats week / file / heatmap / digest
-│   └── push.go           grit push --md / --json
+│   ├── push.go           grit push --md / --json
+│   └── remove.go         grit remove [--all]
 │
 └── internal/
     ├── config/
@@ -422,6 +448,7 @@ CREATE TABLE events (
     occurred_at    INTEGER NOT NULL,   -- Unix timestamp
     skipped        INTEGER DEFAULT 0,
     commit_msg     TEXT,
+    commit_hash    TEXT,               -- SHA of the commit (set by post-commit hook)
     related_commit TEXT               -- for revert events: hash of reverted commit
 );
 
@@ -445,12 +472,12 @@ CREATE TABLE complexity_history (
 
 ## Git hooks
 
-`grit init` installs two hooks, both minimal and safe:
+`grit init` installs three hooks, all minimal and safe:
 
 **pre-commit** — friction interview on every commit:
 ```sh
 #!/bin/sh
-if command -v grit >/dev/null 2>&1; then
+if command -v grit > /dev/null 2>&1; then
     grit commit
 fi
 ```
@@ -458,10 +485,20 @@ fi
 **post-rewrite** — post-mortem on reverts:
 ```sh
 #!/bin/sh
-if command -v grit >/dev/null 2>&1; then
+if command -v grit > /dev/null 2>&1; then
     grit revert --check "$@"
 fi
 ```
+
+**post-commit** — records the commit hash against the interview:
+```sh
+#!/bin/sh
+if command -v grit > /dev/null 2>&1; then
+    grit post-commit
+fi
+```
+
+This links each friction interview to the exact commit SHA, enabling `grit log --commit <hash>` lookups.
 
 If `grit` is not on PATH, hooks silently no-op. Your commits are never blocked.
 
