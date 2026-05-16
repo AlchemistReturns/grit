@@ -6,6 +6,10 @@
 *.dylib
 *.test
 *.out
+grit-darwin-amd64
+grit-darwin-arm64
+grit-linux-amd64
+grit-linux-arm64
 
 # Go build output
 bin/
@@ -22,6 +26,7 @@ coverage.out
 # Logs
 *.log
 .grit/
+.grit.yaml
 
 # Environment variables
 .env
